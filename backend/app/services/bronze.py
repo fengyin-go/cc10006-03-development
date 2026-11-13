@@ -26,12 +26,35 @@ class BronzeService:
             rows = [row for row in rows if keyword in str(row.get("表编号", ""))]
         if status:
             rows = [row for row in rows if row.get("status") == status]
+        rows = [self._decorate(row) for row in rows]
         total = len(rows)
         start = max(page - 1, 0) * size
         return rows[start:start + size], total
 
+    def _decorate(self, row: dict[str, Any]) -> dict[str, Any]:
+        """把原始表自身的待同步状态与准入阻塞原因带到列表上。"""
+        decorated = dict(row)
+        decorated["待同步状态"] = str(row.get("待同步状态") or "—")
+        decorated["待同步原因"] = str(row.get("待同步原因") or "—")
+        decorated["可接收"] = row.get("status") == "已启用"
+        return decorated
+
     def get_entry(self, entry_id: int) -> dict[str, Any] | None:
-        return store.find(MODULE, entry_id)
+        row = store.find(MODULE, entry_id)
+        if row is None:
+            return None
+        decorated = self._decorate(row)
+        decorated["关联接入通道"] = [
+            {
+                "通道编号": channel.get("通道编号"),
+                "通道状态": channel.get("status"),
+                "待同步状态": channel.get("待同步状态"),
+            }
+            for channel in store.rows("ingest")
+            if str(channel.get("关联原始表") or "").strip().upper()
+            == str(row.get("表编号") or "").strip().upper()
+        ]
+        return decorated
 
     def create_entry(self, values: dict[str, Any]) -> tuple[dict[str, Any] | None, list[str]]:
         missing = [field for field in REQUIRED_FIELDS if not str(values.get(field) or "").strip()]

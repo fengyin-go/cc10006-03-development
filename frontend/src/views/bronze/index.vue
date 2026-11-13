@@ -70,7 +70,7 @@ import { request } from '@/api/client'
 type Row = Record<string, string | number | null>
 
 const ENDPOINT = '/api/bronze'
-const columns = ["表编号", "来源通道", "目标路径", "保留策略", "分区规则", "文件格式", "压缩类型", "数据校验"]
+const columns = ["表编号", "来源通道", "目标路径", "数据校验", "待同步状态", "待同步原因", "可接收"]
 const actions = ["提交校验", "启用同步", "停用同步"]
 const statuses = ["草稿", "待校验", "已启用", "已停用"]
 const stats = [{"label": "原始表总数", "value": 0}, {"label": "已启用表", "value": 0}, {"label": "待校验表", "value": 0}]
@@ -79,7 +79,7 @@ const rows = ref<Row[]>([])
 const total = ref(0)
 const errorMessage = ref('')
 const filters = ref<Record<string, string>>({})
-const filterFields = columns.slice(0, 3)
+const filterFields = ["表编号", "来源通道", "目标路径"]
 
 function resetFilters() {
   filters.value = {}
